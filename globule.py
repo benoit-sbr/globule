@@ -1,10 +1,37 @@
+# Modèle d'échanges ioniques et de régulation dans le globule rouge
 
 from scipy.integrate import odeint
 import numpy as np
 import matplotlib.pyplot as plt
 
-def func(y,t,Ht0,PhiMaxNa,PLNa,PLK,PGNa,PGK,PGA,F,R,T,kCo,kHA,d,fHb,QHb,QMg,QX,KB) :
-
+def func(y,t,Ht,PhiMaxNa,PLNa,PLK,PGNa,PGK,PGA,F,R,T,kCo,kHA,d,fHb,QHb,QMg,QX,KB) :
+    # Docstring de la fonction
+    """
+    Renvoie le vecteur dérivé dy/dt = func(y,t)
+    Positional arguments:
+    y --
+    t --
+    Ht --
+    PhiMaxNa --
+    PLNa --
+    PLK --
+    PGNa --
+    PGK --
+    PGA --
+    F --
+    R --
+    T --
+    kCo --
+    kHA --
+    d --
+    fHb --
+    QHb --
+    QMg --
+    QX --
+    KB --
+    Keyword arguments:
+    """
+    # Corps de la fonction
 #	# Le vecteur y est égal à (QNa,QK,QA,QH,Vw,CmNa,CmK,CmA,CmH,CmHB,CmB,CmY)
 #	QNa,QK,QA,QH,Vw,CmNa,CmK,CmA,CmH,CmHB,CmB,CmY = y
 	# Le vecteur y est égal à (QNa,QK,QA,QH,Vw,CmNa,CmK,CmA,CmHB,CmB,CmY)
@@ -56,23 +83,23 @@ def func(y,t,Ht0,PhiMaxNa,PLNa,PLK,PGNa,PGK,PGA,F,R,T,kCo,kHA,d,fHb,QHb,QMg,QX,K
 	dVwdt   =  (dQNadt + dQKdt + dQAdt)/(CmNa + CmK + CmA + CmB + CmY)
 
 	# Variation de Ht ?
-	Ht = Ht0 * np.exp(Vw - Vw0)
+#	Ht = Ht0 * np.exp(Vw - Vw0)
 
 	# Variation des concentrations extra-cellulaires Cm
 	
-	dCmNadt = (Ht/(1 - Ht)) * (dVwdt*CmNa - dQNadt)
+	dCmNadt = (Ht/(1 - Ht * Vw)) * (dVwdt*CmNa - dQNadt)
 	
-	dCmKdt  = (Ht/(1 - Ht)) * (dVwdt*CmK  - dQKdt)
+	dCmKdt  = (Ht/(1 - Ht * Vw)) * (dVwdt*CmK  - dQKdt)
 	
-	dCmAdt  = (Ht/(1 - Ht)) * (dVwdt*CmA  - dQAdt)
+	dCmAdt  = (Ht/(1 - Ht * Vw)) * (dVwdt*CmA  - dQAdt)
 	
-	dCmHBdt = (Ht/(1 - Ht)) * (dVwdt*CmHB - dQHdt)
+	dCmHBdt = (Ht/(1 - Ht * Vw)) * (dVwdt*CmHB - dQHdt)
 	
-	dCmBdt  = (Ht/(1 - Ht)) * (dVwdt*CmB)
+	dCmBdt  = (Ht/(1 - Ht * Vw)) * (dVwdt*CmB)
 	
 #	dCmHdt  =  KB * ((dCmHBdt * CmB - dCmBdt * CmHB)/((CmB-CmHB)**2))
 	
-	dCmYdt  = (Ht/(1 - Ht)) * (dVwdt*CmY)
+	dCmYdt  = (Ht/(1 - Ht * Vw)) * (dVwdt*CmY)
 
 #	# Vecteur final dydt issu de y = (QNa,QK,QA,QH,Vw,CmNa,CmK,CmA,CmH,CmHB,CmB,CmY)
 #	dydt    = [dQNadt,dQKdt,dQAdt,dQHdt,dVwdt,dCmNadt,dCmKdt,dCmAdt,dCmHdt,dCmHBdt,dCmBdt,dCmYdt]
@@ -83,7 +110,7 @@ def func(y,t,Ht0,PhiMaxNa,PLNa,PLK,PGNa,PGK,PGA,F,R,T,kCo,kHA,d,fHb,QHb,QMg,QX,K
 	return dydt
 
 # On fixe les constantes
-Ht0     = 0.1		# 1
+Ht     = 0.1		# 1
 PhiMaxNa= 8.99		# mmol/l*h
 F       = 96485
 E       = -0.0086	# V
@@ -138,7 +165,7 @@ t   = np.linspace(tmin, tmax, 1001)
 plt.figure(figsize=(12, 9), dpi=80)
 for PGA in array_PGA:
 	# Appel à odeint
-	sol = odeint(func, y0, t, args=(Ht0,PhiMaxNa,PLNa,PLK,PGNa,PGK,PGA,F,R,T,kCo,kHA,d,fHb,QHb,QMg,QX,KB))
+	sol = odeint(func, y0, t, args=(Ht,PhiMaxNa,PLNa,PLK,PGNa,PGK,PGA,F,R,T,kCo,kHA,d,fHb,QHb,QMg,QX,KB))
 	
 	plt.subplot(2, 3, 1)
 	#plt.plot(t, sol[:,0], label='QNa')
@@ -159,7 +186,7 @@ for PGA in array_PGA:
 	plt.legend(loc='best')
 	plt.grid(True)
 	
-	plt.subplot(2, 3, 4) # Bas droite
+	plt.subplot(2, 3, 4)
 	plt.plot(t, - R*T/F * 10**3 * np.log(( PGNa*sol[:,0]/sol[:,4] + PGK*sol[:,1]/sol[:,4] + PGA*sol[:,7] ) /
              ( PGNa*sol[:,5] + PGK*sol[:,6] + PGA*sol[:,2]/sol[:,4] )), label='E')
 	plt.legend(loc='best')
@@ -173,9 +200,9 @@ for PGA in array_PGA:
 	plt.legend(loc='best')
 	plt.grid(True)
 
-	plt.subplot(2, 3, 6)
-	plt.plot(t, Ht0 * np.exp(sol[:,4] - Vw0), label='Ht')
-	plt.legend(loc='best')
-	plt.grid(True)
+#	plt.subplot(2, 3, 6)
+#	plt.plot(t, Ht0 * np.exp(sol[:,4] - Vw0), label='Ht')
+#	plt.legend(loc='best')
+#	plt.grid(True)
 	
 plt.show()
